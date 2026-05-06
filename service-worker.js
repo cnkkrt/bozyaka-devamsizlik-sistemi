@@ -1,13 +1,13 @@
-const CACHE_NAME = "devamsizlik-takip-v3";
-const ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.json"
+const CACHE_NAME = "devamsizlik-takip-v4";
+const STATIC_ASSETS = [
+  "/manifest.json",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png"
 ];
 
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)).catch(() => null)
   );
   self.skipWaiting();
 });
@@ -21,9 +21,24 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
+
+  const url = new URL(event.request.url);
+
+  // data.json her zaman ağdan gelsin; eski/boş JSON cache'ten okunmasın.
+  if (url.pathname.endsWith("/data.json")) {
+    event.respondWith(fetch(event.request, { cache: "no-store" }));
+    return;
+  }
+
+  // Sayfa açılışında önce güncel index.html denenir, çevrimdışında cache fallback kullanılır.
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match("/index.html"))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).catch(() => caches.match("/index.html"));
-    })
+    caches.match(event.request).then(cached => cached || fetch(event.request))
   );
 });

@@ -1084,8 +1084,17 @@ function exportSiteDataJSON(){
 }
 
 function applySiteData(data){
-  if(!data || !Array.isArray(data.classes)) return false;
-  classes = data.classes.map((c,i)=>({...c,color:c.color || COLORS[i%COLORS.length]}));
+  if(!data || typeof data !== 'object') return false;
+
+  // KRİTİK DÜZELTME:
+  // data.json ilk kurulumda boş gelebilir. Boş classes dizisi gömülü okul listesini EZMEMELİ.
+  // Sadece dolu ve geçerli classes varsa sınıf/öğrenci listesini güncelle.
+  if(Array.isArray(data.classes) && data.classes.length > 0){
+    classes = data.classes.map((c,i)=>({...c,color:c.color || COLORS[i%COLORS.length]}));
+  } else if(!Array.isArray(classes) || classes.length === 0){
+    classes = cloneSchool().map((c,i)=>({...c,color:COLORS[i%COLORS.length]}));
+  }
+
   absenceRows = Array.isArray(data.absenceRows) ? data.absenceRows : [];
   rebuildStudentIndex();
   populateStudentFormOptions();
@@ -1100,7 +1109,7 @@ function applySiteData(data){
 
 async function loadPublishedData(){
   try{
-    const res = await fetch('/data.json?ts=' + Date.now(), {cache:'no-store'});
+    const res = await fetch('/data.json?v=' + Date.now(), {cache:'no-store'});
     if(!res.ok) throw new Error('data.json yok');
     const data = await res.json();
     applySiteData(data);
@@ -1268,74 +1277,6 @@ if ("serviceWorker" in navigator) {
 }
 </script>
 
-<script>
-/* JSON yayın sistemi - ek güvenli katman */
-function buildSiteDataForExport(){
-  try {
-    const keys = [
-      "okulListesi","students","ogrenciler","devamsizliklar","records",
-      "appData","schoolData","attendanceData","deletedStudents","addedStudents"
-    ];
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      version: "json-yayin-v1",
-      localStorage: {}
-    };
-    keys.forEach(k => {
-      const v = localStorage.getItem(k);
-      if (v !== null) {
-        try { payload.localStorage[k] = JSON.parse(v); }
-        catch(e){ payload.localStorage[k] = v; }
-      }
-    });
-
-    // Uygulamada global değişkenler varsa onları da yakalamaya çalış
-    ["OKUL_LISTESI","okulListesi","students","ogrenciler","devamsizliklar","attendanceRecords","processedData","state"].forEach(k => {
-      try {
-        if (window[k] !== undefined) payload[k] = window[k];
-      } catch(e){}
-    });
-
-    return payload;
-  } catch(err) {
-    alert("JSON hazırlanırken hata oluştu: " + err.message);
-    return null;
-  }
-}
-
-function indirSiteVerisiJSON(){
-  const data = buildSiteDataForExport();
-  if(!data) return;
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json;charset=utf-8"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "data.json";
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(a.href);
-    a.remove();
-  }, 500);
-}
-
-async function loadPublishedDataJson(){
-  try {
-    const res = await fetch("data.json?ts=" + Date.now(), {cache:"no-store"});
-    if(!res.ok) return;
-    const data = await res.json();
-    if(data && data.localStorage){
-      Object.entries(data.localStorage).forEach(([k,v]) => {
-        try { localStorage.setItem(k, JSON.stringify(v)); }
-        catch(e){ localStorage.setItem(k, String(v)); }
-      });
-    }
-    window.PUBLISHED_DATA_JSON = data;
-  } catch(e) {
-    console.warn("data.json yüklenemedi:", e);
-  }
-}
-loadPublishedDataJson();
-</script>
 
 </body>
 </html>
