@@ -129,6 +129,26 @@ tr:hover td{background:#f8fafc}
 .teacher .admin-only{display:none!important}
 @media(max-width:760px){.auth-card{padding:18px}.auth-tabs{grid-template-columns:1fr}.user-pill{width:100%;justify-content:center}}
 
+
+/* Mobil üst menü optimizasyonu */
+.mobile-menu-toggle{display:none;border:0;border-radius:14px;padding:10px 14px;font-weight:900;cursor:pointer;background:#ffffff;color:#0f172a;box-shadow:0 6px 16px rgba(0,0,0,.14);font-size:14px;align-items:center;gap:8px}
+@media(max-width:760px){
+  .header{position:static!important;padding:12px 14px!important}
+  .header-inner{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px}
+  .brand h1{font-size:20px!important;line-height:1.15;margin:0}
+  .brand p{font-size:12px;line-height:1.35;margin-top:4px}
+  .mobile-menu-toggle{display:inline-flex;justify-content:center;align-items:center;white-space:nowrap}
+  .actions{display:none!important;grid-column:1 / -1;width:100%;gap:8px;margin-top:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:10px}
+  .header.menu-open .actions{display:grid!important;grid-template-columns:1fr}
+  .header.menu-open .mobile-menu-toggle{background:#dbeafe;color:#1e3a8a}
+  .actions .btn,.actions .file-label,.actions .user-pill{width:100%;min-height:44px;justify-content:center;border-radius:14px;font-size:14px;padding:10px 12px}
+  .container{padding-top:12px!important}
+}
+@media(max-width:380px){
+  .brand h1{font-size:18px!important}
+  .mobile-menu-toggle{padding:9px 11px;font-size:13px}
+}
+
 </style>
 </head>
 <body class="locked">
@@ -181,7 +201,8 @@ tr:hover td{background:#f8fafc}
       <h1>Devamsızlık Takip Sistemi</h1>
       <p>Okul listesi sabit gömülü · Devamsızlık Excel yüklenince güncellenir</p>
     </div>
-    <div class="actions">
+    <button class="mobile-menu-toggle" type="button" onclick="toggleMobileMenu()" aria-expanded="false" aria-controls="topActions">☰ Menü</button>
+    <div class="actions" id="topActions">
       <label class="file-label primary admin-only">📊 Devamsızlık Excel Yükle<input id="absenceFile" type="file" accept=".xlsx,.xls,.csv" /></label>
       <button class="btn green admin-only" onclick="exportSiteDataJSON()">🌐 Site Verisini JSON İndir</button>
       <button class="btn" onclick="showHome()">🏠 Ana Sayfa</button>
@@ -356,6 +377,23 @@ tr:hover td{background:#f8fafc}
 </div>
 <script>
 
+
+function toggleMobileMenu(){
+  const header=document.querySelector('.header');
+  const btn=document.querySelector('.mobile-menu-toggle');
+  if(!header || !btn) return;
+  const open=header.classList.toggle('menu-open');
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  btn.textContent = open ? '✕ Kapat' : '☰ Menü';
+}
+function closeMobileMenu(){
+  const header=document.querySelector('.header');
+  const btn=document.querySelector('.mobile-menu-toggle');
+  if(!header || !btn) return;
+  header.classList.remove('menu-open');
+  btn.setAttribute('aria-expanded','false');
+  btn.textContent='☰ Menü';
+}
 const ADMIN_EMAIL = "cnkkrt@gmail.com";
 const ADMIN_PASSWORD = "Ck5272591!";
 const LOCAL_USERS_KEY = "devamsizlik_local_users_v2";
